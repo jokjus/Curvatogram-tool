@@ -267,7 +267,8 @@ $('#export-button').click(function() {
 
 
 function onDocumentDrag(event) {
-	$('#imageTarget').show();
+	document.getElementById('imageTarget').display = 'block';
+	// $('#imageTarget').show();
 	event.preventDefault();
 }
 
@@ -288,7 +289,7 @@ function onDocumentDrop(event) {
 			image.src = event.target.result;
 		};
 		reader.readAsDataURL(file);
-		$('#imageTarget').hide();
+		document.getElementById('imageTarget').display = 'none';
 	}
 
 	
