@@ -19,4 +19,4 @@
  Just drag and drop jpg or png image onto right side of the browser screen. Please use a rectangular image. Suitable image size varies depending on your display. For a laptop 800x800 px is about right.
 
 ## Export SVG
- Exports a SVG image, open with Inkscape, Illustrator or other vector editing software of your choice.
+ Exports an SVG image, open with Inkscape, Illustrator or other vector editing software of your choice.
