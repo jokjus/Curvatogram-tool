@@ -1,3 +1,4 @@
+// INITIALIZE ===============================================
 // Initialize variables
 var position;
 var lineCount = 30;
@@ -205,7 +206,19 @@ function render() {
 	}
 }
 
-// UI listeners
+
+// Reposition the paths whenever the window is resized:
+function onResize(event) {
+    project.activeLayer.position = view.center;
+    arcs.position = view.center;
+}
+
+// HELPERS ====================================================
+function getRandomInt(max) {
+  return Math.floor(Math.random() * Math.floor(max));
+}
+
+// UI listeners ================================================
 var UIDarkness = document.getElementById('darkness');
 UIDarkness.onchange = function() {
 		darkness = this.value;
@@ -238,37 +251,46 @@ UIResolution.onchange = function() {
 }
 
 
-// Reposition the paths whenever the window is resized:
-function onResize(event) {
-    project.activeLayer.position = view.center;
-    arcs.position = view.center;
+
+
+// Export SVG ========================================================
+
+function htmlToElement(html) {
+    var template = document.createElement('template');
+    html = html.trim(); // Never return a text node of whitespace as the result
+    template.innerHTML = html;
+    return template.content.firstChild;
 }
 
 function downloadDataUri(options) {
     if (!options.url)
         options.url = "http://download-data-uri.appspot.com/";
-    $('<form method="post" action="' + options.url
-        + '" style="display:none"><input type="hidden" name="filename" value="'
-        + options.filename + '"/><input type="hidden" name="data" value="'
-        + options.data + '"/></form>').appendTo('body').submit().remove();
+	var form = htmlToElement('<form method="post" action="' + options.url
+	+ '" style="display:none"><input type="hidden" name="filename" value="'
+	+ options.filename + '"/><input type="hidden" name="data" value="'
+	+ options.data + '"/></form>');
+
+	document.getElementsByTagName('body')[0].appendChild(form);
+	form.submit();
+	form.remove();
 }
 
-function getRandomInt(max) {
-  return Math.floor(Math.random() * Math.floor(max));
-}
+var  exportButton = document.getElementById('export-button');
 
-$('#export-button').click(function() {
-    var svg = project.exportSVG({ asString: true });
+exportButton.addEventListener("click", function(e) {
+	var svg = project.exportSVG({ asString: true });
     downloadDataUri({
-        data: 'data:image/svg+xml;base64,' + btoa(svg),
-        filename: 'export.svg'
+        data: "data:image/svg+xml;base64," + btoa(svg),
+        filename: "export.svg"
     });
-});
+}, false);
 
 
+// DRAG'N DROP custom images =========================================
 function onDocumentDrag(event) {
-	document.getElementById('imageTarget').display = 'block';
-	// $('#imageTarget').show();
+	// console.log('draggin');
+	console.log(document.getElementById('imageTarget'));
+	document.getElementById('imageTarget').style.display = 'block';
 	event.preventDefault();
 }
 
@@ -289,10 +311,8 @@ function onDocumentDrop(event) {
 			image.src = event.target.result;
 		};
 		reader.readAsDataURL(file);
-		document.getElementById('imageTarget').display = 'none';
+		document.getElementById('imageTarget').style.display = 'none';
 	}
-
-	
 }
 
 document.addEventListener('drop', onDocumentDrop, false);

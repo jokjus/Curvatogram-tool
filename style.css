@@ -124,13 +124,10 @@ div[class^="ui-target"].active:active {
 	display: none;
 	opacity: .9;
 	top: 0;
-	z-index: 2000;
-}
-
-#imageTarget {
+	z-index: 10000;
 	background-color: #b0b9f2;
 	border: 1px solid #2c3da5;
-	right: 0;
+	right: 0;	
 }
 
 #control {
