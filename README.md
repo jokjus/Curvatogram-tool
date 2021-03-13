@@ -1,7 +1,7 @@
 ![Curvatogram screenshot](/screenshot.png)
 
 # Curvatogram tool
- Creative ool for creating images made of curved lines. Written in javascript and [paper.js](http://paperjs.org/).
+ Creative tool for creating images made of curved lines. Written in javascript and [paper.js](http://paperjs.org/).
 
 ## Setup
  1. Copy files to some directory on your hard drive. 
