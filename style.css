@@ -137,12 +137,15 @@ div[class^="ui-target"].active:active {
 	width: 160px;
 	z-index: 9999;
 	flex-wrap: wrap;
+	position: absolute; 
+	top: 0; 
+	left: 0;
 }
 
 .single-ui-control {
 	padding: 10px;
-	/* margin-right: 20px; */
-	/* border-right: 1px solid #ccc; */
+	width: 100%;
+	border-top: 1px solid #ccc;
 }
 .single-ui-control label {
 	display: block;

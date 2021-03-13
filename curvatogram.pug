@@ -1,0 +1,73 @@
+mixin ui-input(name, label, type='range', min='0', max='50', value='10')
+  .single-ui-control
+    label=label
+    input(id=name, type=type, min=min, max=max, value=value)
+
+mixin ui-checkbox(name, label, checked)
+  .single-ui-control
+    label=label
+    input(id=name checked=checked)
+
+doctype html
+head
+  meta(charset='UTF-8')
+  title Curvatogram tool
+  link(rel='stylesheet' href='style.css')
+  script(type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.11/paper-full.min.js')
+  script(type='text/javascript' src='CCapture.all.min.js')
+
+#control
+  #control-info
+    p
+      b Curvatogram
+      |  tool 
+      br
+      | by
+      a(href='https://www.instagram.com/jussijokinen/') Jussi Jokinen
+    p
+      a(href='https://github.com/jokjus/Curvatogram-tool') Fork on GitHub
+    p SHIFT + click = override block settings.
+  +ui-input('gridSize', 'Grid size', 'range', '0', '10', '3')
+  +ui-input('lineCount', 'Line count', 'range', '0', '50', '25')
+  +ui-input('darkness', 'Darkness', 'range', '0', '50', '7')
+  +ui-input('lineWidth', 'Line width', 'range', '0', '50', '2')
+  +ui-input('resolution', 'Resolution', 'range', '0', '50', '20')
+  +ui-input('colorMode', 'Color mode', 'checkbox', '0', '100', false)
+
+  .single-ui-control
+    button#export-button Export as SVG
+  .single-ui-control
+    select#anim-format
+      option(value='webm') WEBM
+      option(value='png') PNG
+      option(value='jpg') JPG
+    select#anim-easing
+      option(value='sine') Sine
+    //-   option(value='flatForward') flatForward
+    //-   option(value='easeInOutCirc') easeInOutCirc
+    //-   option(value='easeInOutElastic') easeInOutElastic
+    //-   option(value='easeOutElastic') easeOutElastic
+    //-   option(value='easeOutBounce') easeOutBounce
+    //-   option(value='easeInOutExpo') easeInOutExpo
+    //-   option(value='easeInBack') easeInBack
+    //-   option(value='easeInExpo') easeInExpo
+    //-   option(value='easeInOutBack') easeInOutBack
+    //-   option(value='easeInQuart') easeInQuart
+    button#start-animation(type='button') Start animation
+    button#stop-animation(type='button') Stop animation
+    button#start-capture(type='button') Start capture
+    button#stop-capture(type='button') Stop capture
+canvas#canvas(resize='')
+#ui
+
+img#defaultImage(src='cheek.png' alt='')
+
+#info
+  | Drag&apos;n drop a custom source image (png/jpg). 
+  br
+  | Use a square image, about 1000 x 1000 px.
+
+#imageTarget
+  | Drop image here.
+
+script(type='text/paperscript' canvas='canvas' src='curvatogram.js')

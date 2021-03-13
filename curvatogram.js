@@ -1,30 +1,46 @@
 // INITIALIZE ===============================================
 // Initialize variables
 var position;
-var lineCount = 30;
-var resolution = 20;
-var darkness = 7;
-var minDarkness = 0.2;
-var gridWidth = 3;
-var gridHeight = 3;
+var c = {
+	lineCount: 25,
+	resolution: 20,
+	darkness: 7,
+	lineWidth: 0.2,
+	gridWidth: 3,
+	gridHeight: 3,
+	sequence: [],
+	bgColor: new Color(1,1,1),
+	colorMode: false,
+	animEasing: 'sine'
+}
+
 var count = 0;
 var segLength;
-var sequence = []
 var blockSize;
+var animValue = 0;
 
 // Initialize default image & layers
 var raster = new Raster('defaultImage');
 raster.visible = false;
 project.activeLayer.position = view.center;
+// Create background
+var drawingBg = new Path.Rectangle({
+    point: [0, 0],
+    size: [view.size.width, view.size.height],
+	fillColor: c.bgColor	
+});
+
 var arcs = new Layer({position: view.center});
+
+
 
 resetArt();
 
 // Build mouse usable interface elements
 function generateUI() {
 	var count = 0;
-	for (i = 0; i < gridHeight; i++){
-		for (j = 0; j < gridWidth; j++){
+	for (i = 0; i < c.gridHeight; i++){
+		for (j = 0; j < c.gridWidth; j++){
 			var uib = document.createElement('div');
 			
 			uib.classList.add('ui-block');
@@ -55,7 +71,7 @@ function adjustBlockType(e) {
 	var thisEl = e.target;
 	var thisData = thisEl.dataset;
 	var uiBlock = thisEl.parentElement; // get parent
-	sequence[thisData.order] = []; //reset
+	c.sequence[thisData.order] = []; //reset
 	
 	// remove all other lines if shift is pressed
 	if (e.shiftKey) {
@@ -63,7 +79,7 @@ function adjustBlockType(e) {
 			el.classList.remove("active");
 		});
 
-		sequence[thisData.order].push(thisData.blocktype);
+		c.sequence[thisData.order].push(thisData.blocktype);
 		thisEl.classList.toggle('active');  // toggle activity
 	}
 	
@@ -73,7 +89,7 @@ function adjustBlockType(e) {
 			var node = uiBlock.childNodes[o];
 			
 			if (node.classList.contains('active')) { // if button has active class, add to list	
-				sequence[thisData.order].push(node.dataset.blocktype);
+				c.sequence[thisData.order].push(node.dataset.blocktype);
 			}
 		}
 	}
@@ -91,17 +107,17 @@ function resetArt() {
 	raster.position = view.center;
 
 	// Reset blocksize variable
-	blockSize = raster.width / gridWidth;
+	blockSize = raster.width / c.gridWidth;
 
 	// Create new UI
 	generateUI();
 
 	// Initialize grid with random line blocks
-	sequence = [];
+	c.sequence = [];
 	var element = document.getElementById("ui");
-	for (i=0; i<gridWidth*gridHeight; i++) {
+	for (i=0; i<c.gridWidth*c.gridHeight; i++) {
 		var rnd = getRandomInt(6);
-		sequence.push([rnd]);
+		c.sequence.push([rnd]);
 		element.childNodes[i].childNodes[rnd].classList.add('active');
 	}
  
@@ -115,17 +131,17 @@ function render() {
 	position = raster.bounds.bottomRight;
 	var counter = 0;
 
-	for (h = 1; h < gridHeight+1; h++) {
-		for (n = 1; n < gridWidth+1; n++) {
+	for (h = 1; h < c.gridHeight+1; h++) {
+		for (n = 1; n < c.gridWidth+1; n++) {
 			var blockPosition = raster.bounds.topLeft + new Point(blockSize * n, blockSize * h);
 			position = blockPosition;
 
-			var layerAmount = sequence[counter].length;
+			var layerAmount = c.sequence[counter].length;
 			
 			for (l = 0; l < layerAmount; l++) {
-				var toss = sequence[counter][l];
+				var toss = c.sequence[counter][l];
 
-				for (i = 1; i < lineCount; i++) {
+				for (i = 1; i < c.lineCount; i++) {
 
 					var path = new Path({
 						fillColor: 'black',
@@ -135,8 +151,8 @@ function render() {
 					// horizontal lines
 					if (toss == 4) {
 						var refElem = new Path.Line({
-							from: position - new Point(0, blockSize / lineCount * i),
-							to: position - new Point(blockSize, blockSize / lineCount * i),
+							from: position - new Point(0, blockSize / c.lineCount * i),
+							to: position - new Point(blockSize, blockSize / c.lineCount * i),
 							closed: false
 						});
 					}
@@ -144,8 +160,8 @@ function render() {
 					// vertical lines
 					if (toss == 5) {
 						var refElem = new Path.Line({
-							from: position - new Point(blockSize / lineCount * i, 0),
-							to: position - new Point(blockSize / lineCount * i, blockSize),
+							from: position - new Point(blockSize / c.lineCount * i, 0),
+							to: position - new Point(blockSize / c.lineCount * i, blockSize),
 							closed: false
 						});
 					}
@@ -154,7 +170,7 @@ function render() {
 					if ([0,1,2,3].indexOf(parseInt(toss)) > -1 ) {
 						var refElem = new Path.Circle({
 							center: position,
-							radius: blockSize / lineCount * i,
+							radius: blockSize / c.lineCount * i,
 							closed: false
 						});
 
@@ -179,19 +195,25 @@ function render() {
 					path.add(refElem.segments[0].point);
 					path.add(refElem.segments[0].point);
 
-					for (k = 0; k < resolution+1; k++) {
-						var resLength = refElem.length/resolution*k;
+					for (k = 0; k < c.resolution+1; k++) {
+						var resLength = refElem.length/c.resolution*k;
 						resLength = resLength / 1.00001; //hack to overcome rounding problem
 						var resPoint = refElem.getLocationAt(resLength);
 						resPoint = resPoint.point;
 
 						var color = raster.getAverageColor(resPoint);
-						var value = color ? (1 - color.gray) * darkness : 0;
+						var value = color ? (1 - color.gray) * c.darkness : 0;
+						if (runAnimation) {
+							var a = eval(c.animEasing + '(animValue)');
+							value = color ? (1 - color.gray) * c.darkness * a : 0;
+						}
 						
-						var normal = refElem.getNormalAt(resLength) * Math.max(value, minDarkness);
+						var normal = refElem.getNormalAt(resLength) * Math.max(value, c.lineWidth);
 
 						path.add(resPoint - normal);
-						path.insert(0, resPoint + normal);					
+						path.insert(0, resPoint + normal);	
+						if(c.colorMode) { path.fillColor = color }				
+						
 					}
 
 					refElem.remove();
@@ -204,6 +226,12 @@ function render() {
 
 		}
 	}
+
+	animValue += 0.03;
+
+	if( typeof capturer !== 'undefined') {
+        if( capturer) capturer.capture( canvas );
+    } 
 }
 
 
@@ -221,33 +249,45 @@ function getRandomInt(max) {
 // UI listeners ================================================
 var UIDarkness = document.getElementById('darkness');
 UIDarkness.onchange = function() {
-		darkness = this.value;
+		c.darkness = this.value;
 		render();
 }
 
-var UIMinDarkness = document.getElementById('minDarkness');
-UIMinDarkness.onchange = function() {
-		minDarkness = this.value/10;
+var UILineWidth = document.getElementById('lineWidth');
+UILineWidth.onchange = function() {
+		c.lineWidth = this.value/10;
 		render();
 }
 
 var UIGridSize = document.getElementById('gridSize');
 UIGridSize.onchange = function() {
-	gridWidth = parseInt(this.value);
-	gridHeight = parseInt(this.value);
+	c.gridWidth = parseInt(this.value);
+	c.gridHeight = parseInt(this.value);
 	resetArt();
 }
 
 var UILineCount = document.getElementById('lineCount');
 UILineCount.onchange = function() {
-		lineCount = this.value;
+		c.lineCount = this.value;
 		render();
 }
 
 var UIResolution = document.getElementById('resolution');
 UIResolution.onchange = function() {
-		resolution = parseInt(this.value);
+		c.resolution = parseInt(this.value);
 		render();
+}
+
+
+document.getElementById('anim-easing').onchange = function() {
+		c.animEasing = this.value;
+		render();
+}
+
+document.getElementById('colorMode').onchange = function() {
+	c.colorMode = this.checked;
+	console.log(c.colorMode);
+	render();
 }
 
 
@@ -318,3 +358,155 @@ function onDocumentDrop(event) {
 document.addEventListener('drop', onDocumentDrop, false);
 document.addEventListener('dragover', onDocumentDrag, false);
 document.addEventListener('dragleave', onDocumentDrag, false);
+
+
+// ANIMATION =============================================================================
+// =======================================================================================
+// Captures animation with CCapture https://github.com/spite/ccapture.js
+
+// Initialize main animation and capturer variables
+var runAnimation = false // are we running?
+var animFrame = 0;  // animation frame
+var animMasterFrame = 0;
+var animDir = 1;    // animation direction
+var capturer;       // capture object
+
+// Add these buttons to the html
+var startCaptureBtn = document.getElementById( 'start-capture' ),
+    stopCaptureBtn = document.getElementById( 'stop-capture' ),
+    startAnimationBtn = document.getElementById( 'start-animation' ),
+    stopAnimationBtn = document.getElementById( 'stop-animation' );
+	
+
+initializeAnimAndCapture();
+
+function initializeAnimAndCapture() {
+    stopAnimationBtn.style.display = 'none';
+    startCaptureBtn.style.display = 'none';
+    stopCaptureBtn.style.display = 'none';
+
+    startAnimationBtn.addEventListener( 'click', function( e ) {
+        runAnimation = true;
+        animFrame = 0;
+        this.style.display = 'none';
+        stopAnimationBtn.style.display = 'inline-block';
+        startCaptureBtn.style.display = 'inline-block';
+        animate();
+    }, false );
+
+    stopAnimationBtn.addEventListener( 'click', function( e ) {
+        runAnimation = false;
+        this.style.display = 'none';
+        startCaptureBtn.style.display = 'none';
+        startAnimationBtn.style.display = 'inline-block';
+    }, false );
+
+    startCaptureBtn.addEventListener( 'click', function( e ) {
+        // Create a capturer that exports a WebM video
+        capturer = new CCapture( { 
+            format: document.getElementById('anim-format').value,
+            framerate: 60,
+            quality: 100,
+            verbose: true } );  
+
+        capturer.start();
+        this.style.display = 'none';
+        stopCaptureBtn.style.display = 'inline-block';
+        e.preventDefault();
+    }, false );
+
+    stopCaptureBtn.addEventListener( 'click', function( e ) {
+        capturer.stop();
+        this.style.display = 'none';
+        capturer.save();
+        animFrame = 0;
+    }, false );
+}
+
+function animate() {
+    if (runAnimation) {
+        requestAnimationFrame( animate );
+        render();
+    }
+}
+
+// Animation easing functions --------------------------------------
+
+function sine(x) {
+    return ((1 - 0) * Math.sin(x) + 1 + 0) / 2.
+}
+
+
+function easeInOutCirc(x) {
+    return x < 0.5
+        ? (1 - Math.sqrt(1 - Math.pow(2 * x, 2))) / 2
+        : (Math.sqrt(1 - Math.pow(-2 * x + 2, 2)) + 1) / 2;
+}
+
+function easeInOutElastic(x) {
+    var c5 = (2 * Math.PI) / 4.5;
+    return x === 0
+        ? 0
+        : x === 1
+            ? 1
+            : x < 0.5
+                ? -(Math.pow(2, 20 * x - 10) * Math.sin((20 * x - 11.125) * c5)) / 2
+                : (Math.pow(2, -20 * x + 10) * Math.sin((20 * x - 11.125) * c5)) / 2 + 1;
+}
+
+function easeOutElastic(x) {
+    var c4 = (2 * Math.PI) / 3;
+    return x === 0
+        ? 0
+        : x === 1
+            ? 1
+            : Math.pow(2, -10 * x) * Math.sin((x * 10 - 0.75) * c4) + 1;
+}
+
+function easeOutBounce(x) {
+    var n1 = 7.5625;
+    var d1 = 2.75;
+    if (x < 1 / d1) {
+        return n1 * x * x;
+    }
+    else if (x < 2 / d1) {
+        return n1 * (x -= 1.5 / d1) * x + 0.75;
+    }
+    else if (x < 2.5 / d1) {
+        return n1 * (x -= 2.25 / d1) * x + 0.9375;
+    }
+    else {
+        return n1 * (x -= 2.625 / d1) * x + 0.984375;
+    }
+}
+
+function easeInOutExpo(x) {
+    return x === 0
+        ? 0
+        : x === 1
+            ? 1
+            : x < 0.5 ? Math.pow(2, 20 * x - 10) / 2
+                : (2 - Math.pow(2, -20 * x + 10)) / 2;
+}
+
+function easeInBack(x) {
+    var c1 = 1.70158;
+    var c3 = c1 + 1;
+    return c3 * x * x * x - c1 * x * x;
+}
+
+function easeInExpo(x) {
+    return x === 0 ? 0 : Math.pow(2, 10 * x - 10);
+}
+
+function easeInOutBack(x) {
+    var c1 = 1.70158;
+    var c2 = c1 * 1.525;
+    return x < 0.5
+        ? (Math.pow(2 * x, 2) * ((c2 + 1) * 2 * x - c2)) / 2
+        : (Math.pow(2 * x - 2, 2) * ((c2 + 1) * (x * 2 - 2) + c2) + 2) / 2;
+}
+
+function easeInQuart(x) {
+    return x * x * x * x;
+}
