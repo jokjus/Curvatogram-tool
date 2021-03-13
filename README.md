@@ -12,7 +12,7 @@
  3. Open curvatogram.html in a browser.
 
 ## Usage
- It's pretty self explanatory, just click on the image blocks and toggle curves from the green buttons. Tune settings from the settings panel on the left. 
+ It's pretty self explanatory, just click on the image blocks and toggle curve direction from the green buttons. Tune settings from the settings panel on the left. 
  Note: Changing grid size randomizes block orientations.
 
 ## Using custom images
