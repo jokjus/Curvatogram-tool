@@ -108,7 +108,8 @@ function adjustBlockType(e) {
 
 function resetArt() {
 
-
+	arcs.removeChildren();
+	
 	// Position raster to the middle
 	raster.position = view.center;
 
@@ -117,7 +118,7 @@ function resetArt() {
 
 	// Create new UI
 	generateUI();
-
+	
 	// Initialize grid with random line blocks
 	c.sequence = [];
 	var element = document.getElementById("ui");
@@ -126,6 +127,7 @@ function resetArt() {
 		c.sequence.push([rnd]);
 		element.childNodes[i].childNodes[rnd].classList.add('active');
 	}
+
  
 	// Render art
 	render();	
