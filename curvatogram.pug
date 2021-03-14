@@ -6,7 +6,7 @@ mixin ui-input(name, label, type='range', min='0', max='50', value='10')
 mixin ui-checkbox(name, label, checked)
   .single-ui-control
     label=label
-    input(id=name checked=checked)
+    input(id=name type='checkbox' checked=checked)
 
 doctype html
 head
@@ -32,7 +32,10 @@ head
   +ui-input('darkness', 'Darkness', 'range', '0', '50', '7')
   +ui-input('lineWidth', 'Line width', 'range', '0', '50', '2')
   +ui-input('resolution', 'Resolution', 'range', '0', '50', '20')
-  +ui-input('colorMode', 'Color mode', 'checkbox', '0', '100', false)
+  +ui-input('bgColor', 'Background', 'color', '0', '0', '#ffffff')
+  +ui-input('lineColor', 'Line color', 'color', '0', '0', '#000000')
+  +ui-checkbox('colorMode', 'Color mode', false)
+  +ui-checkbox('invert', 'Invert', false)
 
   .single-ui-control
     button#export-button Export as SVG

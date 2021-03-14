@@ -10,7 +10,9 @@ var c = {
 	gridHeight: 3,
 	sequence: [],
 	bgColor: new Color(1,1,1),
+	lineColor: new Color(0,0,0),
 	colorMode: false,
+	invert: false,
 	animEasing: 'sine'
 }
 
@@ -144,7 +146,7 @@ function render() {
 				for (i = 1; i < c.lineCount; i++) {
 
 					var path = new Path({
-						fillColor: 'black',
+						fillColor: c.lineColor,
 						closed: true
 					});
 
@@ -202,6 +204,8 @@ function render() {
 						resPoint = resPoint.point;
 
 						var color = raster.getAverageColor(resPoint);
+						if(c.invert) color = invertColor(color);
+
 						var value = color ? (1 - color.gray) * c.darkness : 0;
 						if (runAnimation) {
 							var a = eval(c.animEasing + '(animValue)');
@@ -229,9 +233,12 @@ function render() {
 
 	animValue += 0.03;
 
+	drawingBg.fillColor = c.bgColor;
+
 	if( typeof capturer !== 'undefined') {
         if( capturer) capturer.capture( canvas );
     } 
+
 }
 
 
@@ -244,6 +251,23 @@ function onResize(event) {
 // HELPERS ====================================================
 function getRandomInt(max) {
   return Math.floor(Math.random() * Math.floor(max));
+}
+
+function hex2rgb(hex) {
+    var t =  hex.match(/[A-Za-z0-9]{2}/g).map(function(v) { return parseInt(v, 16)/255 });
+    var c = new Color(t);
+    return c;
+}
+
+
+function invertColor(color) {
+	// console.log(color);
+	if (color != null) {
+		color.red = 1 - color.red;
+		color.green = 1 - color.green;
+		color.blue = 1 - color.blue;
+		return color;
+	}
 }
 
 // UI listeners ================================================
@@ -278,6 +302,15 @@ UIResolution.onchange = function() {
 		render();
 }
 
+document.getElementById('bgColor').onchange = function() {
+	c.bgColor = hex2rgb(this.value);
+	render();
+}
+
+document.getElementById('lineColor').onchange = function() {
+	c.lineColor = hex2rgb(this.value);
+	render();
+}
 
 document.getElementById('anim-easing').onchange = function() {
 		c.animEasing = this.value;
@@ -286,7 +319,11 @@ document.getElementById('anim-easing').onchange = function() {
 
 document.getElementById('colorMode').onchange = function() {
 	c.colorMode = this.checked;
-	console.log(c.colorMode);
+	render();
+}
+
+document.getElementById('invert').onchange = function() {
+	c.invert = this.checked;
 	render();
 }
 
