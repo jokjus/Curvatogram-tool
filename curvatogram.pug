@@ -36,7 +36,10 @@ head
   +ui-input('lineColor', 'Line color', 'color', '0', '0', '#000000')
   +ui-checkbox('colorMode', 'Color mode', false)
   +ui-checkbox('invert', 'Invert', false)
+  +ui-input('imageOpacity', 'Ref image opacity', 'range', '0', '100', '0')
 
+  .single-ui-control
+    button#clear-button Clear all
   .single-ui-control
     button#export-button Export as SVG
   .single-ui-control
@@ -63,7 +66,7 @@ head
 canvas#canvas(resize='')
 #ui
 
-img#defaultImage(src='cheek.png' alt='')
+//- img#defaultImage(src='cheek.png' alt='')
 
 #info
   | Drag&apos;n drop a custom source image (png/jpg). 

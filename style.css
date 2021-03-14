@@ -121,7 +121,7 @@ div[class^="ui-target"].active:active {
 	padding: 50px;
 	text-align: center;
 	position: absolute;
-	display: none;
+	/* display: none; */
 	opacity: .9;
 	top: 0;
 	z-index: 10000;

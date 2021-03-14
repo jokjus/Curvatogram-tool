@@ -13,6 +13,7 @@ var c = {
 	lineColor: new Color(0,0,0),
 	colorMode: false,
 	invert: false,
+	imageOpacity: 0,
 	animEasing: 'sine'
 }
 
@@ -20,26 +21,31 @@ var count = 0;
 var segLength;
 var blockSize;
 var animValue = 0;
+var raster;
 
-// Initialize default image & layers
-var raster = new Raster('defaultImage');
-raster.visible = false;
+// Initialize layers
 project.activeLayer.position = view.center;
+
+// Layer to hold reference image and bg color
+var bgLayer = new Layer();
+
 // Create background
 var drawingBg = new Path.Rectangle({
     point: [0, 0],
     size: [view.size.width, view.size.height],
-	fillColor: c.bgColor	
+	fillColor: c.bgColor
 });
 
+// Layer for drawn lines
 var arcs = new Layer({position: view.center});
 
 
-
-resetArt();
-
 // Build mouse usable interface elements
 function generateUI() {
+	// Remove UI-components
+	var uielems = document.getElementById("ui");
+	uielems.innerHTML = '';
+
 	var count = 0;
 	for (i = 0; i < c.gridHeight; i++){
 		for (j = 0; j < c.gridWidth; j++){
@@ -96,14 +102,12 @@ function adjustBlockType(e) {
 		}
 	}
 
-	render();
+	renderOneBlock(parseInt(thisData.order));
 }
 
 
 function resetArt() {
-	// Remove UI-components
-	var uielems = document.getElementById("ui");
-	uielems.innerHTML = '';
+
 
 	// Position raster to the middle
 	raster.position = view.center;
@@ -129,111 +133,22 @@ function resetArt() {
 
 // Draw the art based on variables / sequence
 function render() {
-	arcs.removeChildren();
 	position = raster.bounds.bottomRight;
 	var counter = 0;
 
 	for (h = 1; h < c.gridHeight+1; h++) {
 		for (n = 1; n < c.gridWidth+1; n++) {
-			var blockPosition = raster.bounds.topLeft + new Point(blockSize * n, blockSize * h);
-			position = blockPosition;
-
-			var layerAmount = c.sequence[counter].length;
 			
-			for (l = 0; l < layerAmount; l++) {
-				var toss = c.sequence[counter][l];
-
-				for (i = 1; i < c.lineCount; i++) {
-
-					var path = new Path({
-						fillColor: c.lineColor,
-						closed: true
-					});
-
-					// horizontal lines
-					if (toss == 4) {
-						var refElem = new Path.Line({
-							from: position - new Point(0, blockSize / c.lineCount * i),
-							to: position - new Point(blockSize, blockSize / c.lineCount * i),
-							closed: false
-						});
-					}
-
-					// vertical lines
-					if (toss == 5) {
-						var refElem = new Path.Line({
-							from: position - new Point(blockSize / c.lineCount * i, 0),
-							to: position - new Point(blockSize / c.lineCount * i, blockSize),
-							closed: false
-						});
-					}
-
-					// curved lines
-					if ([0,1,2,3].indexOf(parseInt(toss)) > -1 ) {
-						var refElem = new Path.Circle({
-							center: position,
-							radius: blockSize / c.lineCount * i,
-							closed: false
-						});
-
-						if (toss == 1) {
-							refElem.rotate(270);
-							refElem.translate(new Point(0, -blockSize))
-						}
-						if (toss == 0) {
-							refElem.rotate(180);
-							refElem.translate(new Point(-blockSize, -blockSize))
-						}
-						if (toss == 3) {
-							refElem.rotate(90);
-							refElem.translate(new Point(-blockSize, 0))
-						}
-
-						refElem.lastSegment.remove();
-						refElem.lastSegment.remove();
-					}	
-
-					//initialize first points of the path 
-					path.add(refElem.segments[0].point);
-					path.add(refElem.segments[0].point);
-
-					for (k = 0; k < c.resolution+1; k++) {
-						var resLength = refElem.length/c.resolution*k;
-						resLength = resLength / 1.00001; //hack to overcome rounding problem
-						var resPoint = refElem.getLocationAt(resLength);
-						resPoint = resPoint.point;
-
-						var color = raster.getAverageColor(resPoint);
-						if(c.invert) color = invertColor(color);
-
-						var value = color ? (1 - color.gray) * c.darkness : 0;
-						if (runAnimation) {
-							var a = eval(c.animEasing + '(animValue)');
-							value = color ? (1 - color.gray) * c.darkness * a : 0;
-						}
-						
-						var normal = refElem.getNormalAt(resLength) * Math.max(value, c.lineWidth);
-
-						path.add(resPoint - normal);
-						path.insert(0, resPoint + normal);	
-						if(c.colorMode) { path.fillColor = color }				
-						
-					}
-
-					refElem.remove();
-					
-					// path.smooth();
-
-				}
-			}
+			renderOneBlock(counter);
+			
 			counter++;
-
 		}
 	}
 
 	animValue += 0.03;
 
 	drawingBg.fillColor = c.bgColor;
+	raster.opacity = c.imageOpacity;
 
 	if( typeof capturer !== 'undefined') {
         if( capturer) capturer.capture( canvas );
@@ -241,11 +156,127 @@ function render() {
 
 }
 
+function renderOneBlock(counter) {
+	var hInd = parseInt(counter % c.gridWidth) + 1 ;
+	var vInd = parseInt(counter / c.gridHeight) + 1;
+
+	var blockPosition = raster.bounds.topLeft + new Point(blockSize * hInd, blockSize * vInd);
+	position = blockPosition;
+
+
+	var layerAmount;
+	var mySeq = c.sequence[counter];
+	mySeq ? layerAmount = mySeq.length : layerAmount = 0;
+
+	arcs.activate();				
+	if (arcs.children[counter]) {
+		arcs.children[counter].remove();
+	}
+
+	var block = new Group({
+		name: 'block'
+	});
+
+	arcs.insertChild(counter, block);
+
+	for (l = 0; l < layerAmount; l++) {
+		var toss = mySeq[l];
+
+		for (i = 1; i < c.lineCount; i++) {
+
+			var path = new Path({
+				fillColor: c.lineColor,
+				closed: true
+			});
+
+			block.addChild(path);
+
+			// horizontal lines
+			if (toss == 4) {
+				var refElem = new Path.Line({
+					from: position - new Point(0, blockSize / c.lineCount * i),
+					to: position - new Point(blockSize, blockSize / c.lineCount * i),
+					closed: false
+				});
+			}
+
+			// vertical lines
+			if (toss == 5) {
+				var refElem = new Path.Line({
+					from: position - new Point(blockSize / c.lineCount * i, 0),
+					to: position - new Point(blockSize / c.lineCount * i, blockSize),
+					closed: false
+				});
+			}
+
+			// curved lines
+			if ([0,1,2,3].indexOf(parseInt(toss)) > -1 ) {
+				var refElem = new Path.Circle({
+					center: position,
+					radius: blockSize / c.lineCount * i,
+					closed: false
+				});
+
+				if (toss == 1) {
+					refElem.rotate(270);
+					refElem.translate(new Point(0, -blockSize))
+				}
+				if (toss == 0) {
+					refElem.rotate(180);
+					refElem.translate(new Point(-blockSize, -blockSize))
+				}
+				if (toss == 3) {
+					refElem.rotate(90);
+					refElem.translate(new Point(-blockSize, 0))
+				}
+
+				refElem.lastSegment.remove();
+				refElem.lastSegment.remove();
+			}	
+
+			//initialize first points of the path 
+			path.add(refElem.segments[0].point);
+			path.add(refElem.segments[0].point);
+
+			for (k = 0; k < c.resolution+1; k++) {
+				var resLength = refElem.length/c.resolution*k;
+				resLength = resLength / 1.00001; //hack to overcome rounding problem
+				var resPoint = refElem.getLocationAt(resLength);
+				resPoint = resPoint.point;
+
+				var color = raster.getAverageColor(resPoint);
+				if(c.invert) color = invertColor(color);
+
+				var value = color ? (1 - color.gray) * c.darkness : 0;
+				if (runAnimation) {
+					var a = eval(c.animEasing + '(animValue)');
+					value = color ? (1 - color.gray) * c.darkness * a : 0;
+				}
+				
+				var normal = refElem.getNormalAt(resLength) * Math.max(value, c.lineWidth);
+
+				path.add(resPoint - normal);
+				path.insert(0, resPoint + normal);	
+				if(c.colorMode) { path.fillColor = color }				
+				
+			}
+
+			refElem.remove();
+			
+			// path.smooth();
+
+		}
+	}
+}
 
 // Reposition the paths whenever the window is resized:
 function onResize(event) {
     project.activeLayer.position = view.center;
-    arcs.position = view.center;
+	bgLayer.position = view.center;
+	if (raster != null) {
+		generateUI();
+		render();
+	}	
 }
 
 // HELPERS ====================================================
@@ -261,7 +292,6 @@ function hex2rgb(hex) {
 
 
 function invertColor(color) {
-	// console.log(color);
 	if (color != null) {
 		color.red = 1 - color.red;
 		color.green = 1 - color.green;
@@ -317,6 +347,11 @@ document.getElementById('anim-easing').onchange = function() {
 		render();
 }
 
+document.getElementById('imageOpacity').onchange = function() {
+	c.imageOpacity = this.value / 100;
+	render();
+}
+
 document.getElementById('colorMode').onchange = function() {
 	c.colorMode = this.checked;
 	render();
@@ -327,7 +362,16 @@ document.getElementById('invert').onchange = function() {
 	render();
 }
 
-
+document.getElementById('clear-button').addEventListener('click', function(){
+	c.sequence = [];
+	var myui = document.getElementById('ui');
+	[].forEach.call(myui.childNodes, function(elb) {
+		[].forEach.call(elb.childNodes, function(el) {
+			el.classList.remove("active");
+		});
+	});
+	render();
+}, false);
 
 
 // Export SVG ========================================================
@@ -363,10 +407,9 @@ exportButton.addEventListener("click", function(e) {
 }, false);
 
 
+
 // DRAG'N DROP custom images =========================================
 function onDocumentDrag(event) {
-	// console.log('draggin');
-	console.log(document.getElementById('imageTarget'));
 	document.getElementById('imageTarget').style.display = 'block';
 	event.preventDefault();
 }
@@ -380,9 +423,12 @@ function onDocumentDrop(event) {
 
 		reader.onload = function (event) {
 			var image = document.createElement('img');
+			// var image = document.getElementById('defaultImage');
 			image.onload = function () {
+				bgLayer.activate();
 				raster = new Raster(image);
-				raster.visible = false;
+				// raster.selected = true;
+				// raster.visible = false;
 				resetArt();
 			};
 			image.src = event.target.result;
